@@ -1,26 +1,43 @@
-// Load document
-PDFJS.getDocument(url).then(function (doc) {
-  var promise = Promise.resolve();
-  for (var i = 0; i < doc.numPages; i++) {
-    // One-by-one load pages
-    promise = promise.then(function (id) {
-      return doc.getPage(id + 1).then(function (pdfPage) {
-// Add div with page view.
-var SCALE = 1.0; 
-var pdfPageView = new PDFJS.PDFPageView({
-      container: container,
-      id: id,
-      scale: SCALE,
-      defaultViewport: pdfPage.getViewport(SCALE),
-      // We can enable text/annotations layers, if needed
-      textLayerFactory: new PDFJS.DefaultTextLayerFactory(),
-      annotationLayerFactory: new PDFJS.DefaultAnnotationLayerFactory()
-    });
-    // Associates the actual page with the view, and drawing it
-    pdfPageView.setPdfPage(pdfPage);
-    return pdfPageView.draw();        
-      });
-    }.bind(null, i));
+<style>
+  #pdf-viewer {
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    overflow: auto;
   }
-  return promise;
-});
+  
+  .pdf-page-canvas {
+    display: block;
+    margin: 5px auto;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+  }
+</style>
+
+<script>   
+    url = 'https://github.com/mozilla/pdf.js/blob/master/test/pdfs/tracemonkey.pdf';
+    var thePdf = null;
+    var scale = 1;
+    
+    PDFJS.getDocument(url).promise.then(function(pdf) {
+        thePdf = pdf;
+        viewer = document.getElementById('pdf-viewer');
+        
+        for(page = 1; page <= pdf.numPages; page++) {
+          canvas = document.createElement("canvas");    
+          canvas.className = 'pdf-page-canvas';         
+          viewer.appendChild(canvas);            
+          renderPage(page, canvas);
+        }
+    });
+    
+    function renderPage(pageNumber, canvas) {
+        thePdf.getPage(pageNumber).then(function(page) {
+          viewport = page.getViewport({ scale: scale });
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;          
+          page.render({canvasContext: canvas.getContext('2d'), viewport: viewport});
+    });
+    }
+</script>
+
+<div id='pdf-viewer'></div>
